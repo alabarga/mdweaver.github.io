@@ -15,6 +15,18 @@
         padding: 0;
         margin: 0;
       }
+
+      .show_title {
+        position: absolute;
+        top: 5%;
+        left: 5%;
+        opacity: 0;
+        font: 22px 'Helvetica';
+      }
+
+      .show_title h1 {
+        font-weight: bold;
+      }
       
       .layer_selector {
                 background: #000000;
@@ -67,6 +79,13 @@
   </head>
   <body>
     <div id="map"></div>
+
+    <div id="title" class="show_title">
+        <h1>
+            Show this title
+        </h1>
+    </div>
+
     <div id="layers" class="layer_selector">
         <ul>
             <li data="1880">1880
