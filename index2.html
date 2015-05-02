@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CartoDB Workshop | CartoDB.js</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <link rel="shortcut icon" href="http://cartodb.com/assets/favicon.ico" />
+    <style>
+      html, body, #map {
+        height: 100%;
+        padding: 0;
+        margin: 0;
+      }
+      button {
+         display: inline-block;
+         padding: 10px 20px 10px 20px;
+         background: #ff5a5f;
+         border-radius: 3px;
+         color: #eee;
+         font-weight: 400;
+         font-size: 90%;
+         margin: 0px 5px 0px 5px;
+         z-index: 100;
+         position: absolute;
+         top: 20px;
+         right: 20px;
+      }
+      button.hidden{
+        display: none;
+      }
+    </style>
+    <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/3.12/themes/css/cartodb.css" />
+    <!--[if lte IE 8]>
+      <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/themes/css/cartodb.ie.css" />
+    <![endif]-->
+  </head>
+  <body>
+    <div id="map"></div>
+    <button class="hidden">Clear filter</button>
+    
+    <!-- include cartodb.js library -->
+    <script src="http://libs.cartocdn.com/cartodb.js/v3/3.12/cartodb.js"></script>
+
+    <script>
+      function main() {
+        // Add your code here
+        var map = new L.Map('map', { zoomControl: false, center: [39.833333, -98.583333], zoom: 4 });
+        var layer = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png').addTo(map);
+
+        cartodb.createLayer(map, 'https://mdweaver107.cartodb.com/api/v2/viz/02510880-f0ed-11e4-a210-0e4fddd5de28/viz.json') .done(function(layer) { 
+          var counties = layer.getSubLayer(0); 
+          counties.setInteractivity('cartodb_id, fips, name, time') counties.setInteraction(true)
+          counties.on('featureOver', function(e, pos, pixel, data) { console.log(data.name + "\nTravel time: " + data.elevation + " days"); });
+          counties.on('featureClick', function(e, pos, pixel, data) { var newSql = "SELECT times_1880.* , round(t1.time,1) as time
+  FROM times_1880, (SELECT generate_series(1,3109) as row_id,  unnest(distances)::numeric as time FROM times_1880 WHERE times_1880.fips = " + data.fips + ") as t1
+Where times_1880.row_id = t1.row_id"; console.log("SQL: " + newSql); });
+          counties.setSQL(newSql);
+           }).addTo(map);
+        map.render();
+      }
+      // you could use $(window).load(main);
+      window.onload = main;
+    </script>
+  </body>
+</html>
