@@ -149,7 +149,7 @@
           counties.setInteraction(true);
 
           counties.on('featureClick', function(e, pos, pixel, data) { 
-              var newSql = "SELECT times_1880.* , round(t1.time,1) as time FROM times_1880, (SELECT generate_series(1,3109) as row_id,  unnest(distances)::numeric as time FROM times_1880 WHERE times_1880.fips = " + data.fips + ") as t1 Where times_1880.row_id = t1.row_id";
+              var newSql = "SELECT times_1880_1900.* , round(t1.time,2) as time FROM times_1880_1900, (SELECT generate_series(1,3109) as row_id,  unnest(times_1880)::numeric as time FROM times_1880_1900 WHERE times_1880_1900.fips = " + data.fips + ") as t1 Where times_1880_1900.row_id = t1.row_id";
               counties.setSQL(newSql);
             });
            })
