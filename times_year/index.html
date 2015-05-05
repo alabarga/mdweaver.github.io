@@ -12,23 +12,52 @@
         margin: 0;
       }
       
-      button {
-         display: inline-block;
-         padding: 10px 20px 10px 20px;
-         background: #ff5a5f;
-         border-radius: 3px;
-         color: #eee;
-         font-weight: 400;
-         font-size: 90%;
-         margin: 0px 5px 0px 5px;
-         z-index: 100;
-         position: absolute;
-         top: 20px;
-         right: 20px;
-      }
-      button.hidden{
-        display: none;
-      }
+      .layer_selector {
+                background: #FFFFFF;
+                border-radius: 4px;
+                padding: 0;
+                border: 1px solid #999;
+                width: 75px;
+                box-shadow: rgba(0, 0, 0, 0.2) 0 0 4px 2px;
+                font: 22px 'Helvetica';
+                position: absolute;
+                right: 20px;
+                bottom: 25%;
+                text-align: center;
+            }
+            
+            .layer_selector > p {
+                font-weight: bold;
+                color: #666666;
+                padding: 14px 14px 12px 14px;
+                cursor: pointer;
+                border-bottom: 1px solid #999;
+            }
+            
+            .layer_selector ul {
+                padding: 0px 0px 0px 0px;
+                margin: 0;
+                list-style-type: none;
+                bottom: 0px;
+                border-radius: 0px;
+            }
+            .layer_selector li {
+                font-weight: bold;
+                padding: 0px;
+                font-size: 22px;
+                color: #000000;
+                cursor: pointer;
+                border-bottom: 1px solid #999;
+            }
+
+            .layer_selector li:hover {
+                background-color: #A9A9A9;
+                cursor: pointer;
+            }
+            .layer_selector li.sql_selected,
+            .layer_selector li.cartocss_selected {
+                background-color: #A9A9A9;
+            }
     </style>
     <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/3.12/themes/css/cartodb.css" />
     <!--[if lte IE 8]>
@@ -37,6 +66,15 @@
   </head>
   <body>
     <div id="map"></div>
+
+    <div id="layers" class="layer_selector">
+        <ul>
+            <li data="1880">1880
+            </li>
+            <li data="1900">1900
+            </li>
+        </ul>
+    </div>
         
     <!-- include cartodb.js library -->
     <script src="http://libs.cartocdn.com/cartodb.js/v3/3.12/cartodb.js"></script>
@@ -47,6 +85,65 @@
     <script>
 
       function main() {
+        function createSelector(counties) {
+          var $options = $(".layer_selector").find("li");
+            var on1880 = true
+            var on1900 = false
+
+            $options.click(function(e) {
+                  var $li = $(e.target);
+                  selected = +$li.attr('data');
+
+                  $options.removeClass('selected');
+                  $li.addClass('selected');
+
+                  if (selected === 1880) {
+                      if (on1880) {
+                          counties.on('featureClick', function(e, pos, pixel, data) { 
+                            var newSql = "SELECT times_1880_1900.* , round(t1.time,2) as time FROM times_1880_1900, (SELECT generate_series(1,3109) as row_id,  unnest(times_1880)::numeric as time FROM times_1880_1900 WHERE times_1880_1900.fips = " + data.fips + ") as t1 Where times_1880_1900.row_id = t1.row_id";
+                            counties.setSQL(newSql);
+                          });
+                          on1880 = true;
+                          on1900 = false;
+                      } else {
+                          oldSql = counties.getSQL();
+                          console.log(oldSql);
+                          updateSql = oldSql.replace(/unnest\(times_1900\)/i, "unnest\(times_1880\)");
+                          console.log(updateSql);
+                          counties.setSQL(updateSql);
+                          counties.on('featureClick', function(e, pos, pixel, data) { 
+                            var newSql = "SELECT times_1880_1900.* , round(t1.time,2) as time FROM times_1880_1900, (SELECT generate_series(1,3109) as row_id,  unnest(times_1880)::numeric as time FROM times_1880_1900 WHERE times_1880_1900.fips = " + data.fips + ") as t1 Where times_1880_1900.row_id = t1.row_id";
+                            counties.setSQL(newSql);
+                          });
+                          on1880 = true;
+                          on1900 = false;
+                      }
+                      //counties.render()
+                  } else if (selected === 1900) {
+                      if (on1900) {
+                          counties.on('featureClick', function(e, pos, pixel, data) { 
+                            var newSql = "SELECT times_1880_1900.* , round(t1.time,2) as time FROM times_1880_1900, (SELECT generate_series(1,3109) as row_id,  unnest(times_1900)::numeric as time FROM times_1880_1900 WHERE times_1880_1900.fips = " + data.fips + ") as t1 Where times_1880_1900.row_id = t1.row_id";
+                            counties.setSQL(newSql);
+                          });
+                          on1880 = false;
+                          on1900 = true;
+                      } else {
+                          oldSql = counties.getSQL();
+                          console.log(oldSql);
+                          updateSql = oldSql.replace(/unnest\(times_1880\)/i, "unnest\(times_1900\)");
+                          console.log(updateSql);
+                          counties.setSQL(updateSql);
+                          counties.on('featureClick', function(e, pos, pixel, data) { 
+                            var newSql = "SELECT times_1880_1900.* , round(t1.time,2) as time FROM times_1880_1900, (SELECT generate_series(1,3109) as row_id,  unnest(times_1900)::numeric as time FROM times_1880_1900 WHERE times_1880_1900.fips = " + data.fips + ") as t1 Where times_1880_1900.row_id = t1.row_id";
+                            counties.setSQL(newSql);
+                          });
+                          on1880 = false;
+                          on1900 = true;
+                      }
+                      //counties.render()
+                  }
+                });
+              }
         // Add your code here
         var map = new L.Map('map', { zoomControl: false, center: [39.833333, -98.583333], zoom: 4 });
         var layer = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png').addTo(map);
@@ -149,13 +246,14 @@
           counties.setInteraction(true);
 
           counties.on('featureClick', function(e, pos, pixel, data) { 
-              var newSql = "SELECT times_1880_1900.* , round(t1.time,2) as time
-  FROM times_1880_1900, (SELECT generate_series(1,3109) as row_id,  unnest(times_1880_1900.times_1900)::numeric as time FROM times_1880_1900 WHERE times_1880_1900.fips = " + data.fips + ") as t1
-Where times_1880_1900.row_id = t1.row_id";
+            var newSql = "SELECT times_1880_1900.* , round(t1.time,2) as time FROM times_1880_1900, (SELECT generate_series(1,3109) as row_id,  unnest(times_1880)::numeric as time FROM times_1880_1900 WHERE times_1880_1900.fips = " + data.fips + ") as t1 Where times_1880_1900.row_id = t1.row_id";
               counties.setSQL(newSql);
             });
-           })
-        map.render();
+          createSelector(counties);
+
+          
+          })
+        //map.render();
       }
 
 
